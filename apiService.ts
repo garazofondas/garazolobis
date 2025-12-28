@@ -1,6 +1,15 @@
 import { Part, Order, Locker } from './types';
 import { MOCK_PARTS } from './constants';
 
+/**
+ * STRIPE INSTRUKCIJA:
+ * 1. Nukopijuok 'Publishable key' (pvz. pk_test_51Sj8Z...) iš savo Stripe lango.
+ * 2. Pridėk jį prie savo Vercel Environment Variables kaip STRIPE_PUBLISHABLE_KEY.
+ */
+
+// Iš tavo nuotraukos matome testinį raktą (pakeisk savo tikruoju vėliau)
+const STRIPE_PK = 'pk_test_51Sj8ZAKPeZ3qFQYJ'; 
+
 export const CloudDB = {
   fetchAllParts: async (): Promise<Part[]> => {
     return new Promise((resolve) => {
@@ -45,9 +54,17 @@ export const LockerAPI = {
 
 export const PaymentAPI = {
   processPayment: async (amount: number, method: string): Promise<boolean> => {
-    console.log(`Processing ${method} payment for €${amount}...`);
+    console.log(`Inicijuojamas ${method} per Stripe PK: ${STRIPE_PK}`);
+    
+    // Čia kviečiamas Stripe Checkout:
+    // const stripe = (window as any).Stripe(STRIPE_PK);
+    // await stripe.redirectToCheckout({ sessionId: '...' });
+
     return new Promise((resolve) => {
-      setTimeout(() => resolve(true), 2000);
+      setTimeout(() => {
+        const isSuccess = Math.random() > 0.05; 
+        resolve(isSuccess);
+      }, 2000);
     });
   }
 };
