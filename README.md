@@ -1,24 +1,27 @@
+# 🔧 Garažo Lobis - Saugumo Gidas
 
-# 🔧 Garažo Lobis - Vinted garažui
+Sveikas! Tavo platforma jau pasiekė "Live" stadiją. Štai kaip viską sujungti saugiai.
 
-Sveikas! Čia yra tavo platformos kodas. Štai kaip jį paleisti į pasaulį:
+## 🛡️ Svarbiausia: Stripe Raktai
+Turi du raktus:
+1. **Publishable Key (PK):** Jis yra viešas, naudojamas pirkimo lange. Jis jau įrašytas kode.
+2. **Secret Key (SK):** Tai tavo "banko raktas". Jo negali būti kode.
 
-## 1. Paruošimas tavo kompiuteryje
-1. Susikurk naują aplanką (pvz. `garazo-lobis`).
-2. Tame aplanke susikurk visus failus, kuriuos matai šiame susirašinėjime. **Svarbu**: išlaikyk tą pačią aplankų struktūrą (pvz., `components/` aplanke turi būti visi modalai).
-3. Jei turi įsidiegęs [Node.js](https://nodejs.org/), terminale rašyk `npm install`, o tada `npm run dev` – pamatysi projektą veikiantį lokaliai.
+### Kaip pridėti Secret Key į Vercel:
+1. Eik į savo [Vercel Dashboard](https://vercel.com/dashboard).
+2. Atsidaryk `garazolobis` projektą.
+3. Spausk **Settings** -> **Environment Variables**.
+4. Pridėk naują:
+   - **Key:** `STRIPE_SECRET_KEY`
+   - **Value:** `sk_live_...` (tavo slaptas raktas iš Stripe)
+5. Spausk **Save**.
 
-## 2. Kėlimas į GitHub
-1. Užsiregistruok [GitHub](https://github.com).
-2. Sukurk naują **Repository** pavadinimu `garazo-lobis`.
-3. Pasirink **"Upload an existing file"** ir tiesiog sumesk visus failus iš savo aplanko.
-4. Spausk **"Commit changes"**.
+## 🚀 Kaip paleisti atnaujinimus?
+Jei pakeitei kodą savo kompiuteryje:
+1. `git add .`
+2. `git commit -m "Atnaujinimas"`
+3. `git push origin main`
+Vercel automatiškai pastebės pakeitimus ir per minutę atnaujins tavo svetainę.
 
-## 3. Paleidimas į internetą (Hostingas)
-1. Eik į [Vercel](https://vercel.com).
-2. Junkis per GitHub.
-3. Spausk **"Import"** prie savo `garazo-lobis` projekto.
-4. **SVARBU**: Skiltyje "Environment Variables" pridėk `API_KEY` ir įklijuok savo Gemini API raktą (jei nori, kad AI veiktų).
-5. Spausk **"Deploy"**.
-
-Po minutės turėsi nuorodą!
+## 💡 AI Integracija
+Nepamiršk Vercel aplinkoje pridėti ir `API_KEY` (Gemini API), kad veiktų nuotraukų atpažinimas!
