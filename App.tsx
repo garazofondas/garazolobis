@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
 import PartCard from './components/PartCard';
@@ -42,7 +41,12 @@ const App: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState<Part | null>(null);
   const [showWithdraw, setShowWithdraw] = useState(false);
   
-  const [walletBalance, setWalletBalance] = useState(145.00);
+  // Nustatome pradines lėšas į 0.00 €, kaip tikroje programėlėje
+  const [walletBalance, setWalletBalance] = useState(() => {
+    const saved = localStorage.getItem('wallet_balance');
+    return saved ? parseFloat(saved) : 0.00;
+  });
+
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
 
@@ -73,8 +77,9 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('my_favorites', JSON.stringify(favorites));
     localStorage.setItem('my_garage', JSON.stringify(myGarage));
+    localStorage.setItem('wallet_balance', walletBalance.toString());
     if (activeVehicleId) localStorage.setItem('active_vehicle_id', activeVehicleId);
-  }, [favorites, myGarage, activeVehicleId]);
+  }, [favorites, myGarage, activeVehicleId, walletBalance]);
 
   const activeVehicle = useMemo(() => 
     myGarage.find(v => v.id === activeVehicleId) || null
@@ -256,7 +261,27 @@ const App: React.FC = () => {
            <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-2xl">
               <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Tavo balansas</h4>
               <h2 className="text-5xl font-black mb-8 tracking-tighter">€{walletBalance.toFixed(2)}</h2>
-              <button onClick={() => setShowWithdraw(true)} className="bg-orange-600 hover:bg-orange-700 transition-all px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-orange-900/40">Išsigryninti į banką</button>
+              <button 
+                disabled={walletBalance <= 0}
+                onClick={() => setShowWithdraw(true)} 
+                className={`px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all ${walletBalance > 0 ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-900/40' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+              >
+                Išsigryninti į banką
+              </button>
+           </div>
+           
+           <div className="mt-8 bg-white rounded-2xl p-6 border border-slate-200">
+             <h3 className="font-black uppercase text-xs text-slate-400 mb-4 tracking-widest">Piniginė veikia taip:</h3>
+             <ul className="space-y-3">
+               <li className="flex gap-3 text-sm font-medium text-slate-600">
+                 <span className="text-orange-500">✔</span>
+                 Parduodi prekę – pinigai atsiranda čia, kai pirkėjas gauna siuntą.
+               </li>
+               <li className="flex gap-3 text-sm font-medium text-slate-600">
+                 <span className="text-orange-500">✔</span>
+                 Perki prekę – moki tiesiai iš kortelės (pinigai čia neatsiranda).
+               </li>
+             </ul>
            </div>
         </div>
       )}
