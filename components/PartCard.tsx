@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Part, Condition } from '../types';
 
@@ -22,6 +21,8 @@ const PartCard: React.FC<PartCardProps> = ({ part, onClick, isFavorite, onToggle
     }
   };
 
+  const isTrustedSeller = part.seller.rating >= 4.5 && part.seller.reviewCount > 5;
+
   return (
     <div 
       className={`bg-white rounded-2xl overflow-hidden border border-slate-200 hover:shadow-2xl hover:-translate-y-1 transition-all cursor-pointer group flex flex-col h-full shadow-sm relative ${part.condition === Condition.JUNK ? 'opacity-90' : ''}`}
@@ -42,10 +43,15 @@ const PartCard: React.FC<PartCardProps> = ({ part, onClick, isFavorite, onToggle
           alt={part.title} 
           className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ${part.condition === Condition.JUNK ? 'grayscale contrast-75' : ''}`}
         />
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
           <span className={`text-[8px] font-black px-2 py-1 rounded shadow-sm uppercase tracking-wider ${getConditionColor(part.condition)}`}>
             {part.condition}
           </span>
+          {isTrustedSeller && (
+            <span className="bg-indigo-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase tracking-tighter italic">
+              Patikimas narys
+            </span>
+          )}
         </div>
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-full px-2.5 py-1.5 border border-white/20">
           <img src={part.seller.avatar} alt={part.seller.name} className="w-4 h-4 rounded-full border border-white" />
