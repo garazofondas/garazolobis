@@ -1,83 +1,144 @@
+import React, { useState } from 'react';
+import { Part, Locker } from '../types';
+import LockerSelector from './LockerSelector';
+import { PaymentAPI } from '../apiService';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Chat } from '../types';
-
-interface ChatModalProps {
-  chat: Chat;
+interface CheckoutModalProps {
+  part: Part;
   onClose: () => void;
-  onSend: (text: string) => void;
+  onComplete: (locker: Locker, method: any) => void;
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ chat, onClose, onSend }) => {
-  const [inputText, setInputText] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
+const CheckoutModal: React.FC<CheckoutModalProps> = ({ part, onClose, onComplete }) => {
+  const [step, setStep] = useState(1);
+  const [selectedLocker, setSelectedLocker] = useState<Locker | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'paypal' | 'bank'>('card');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const protectionFee = 0.70 + (part.price * 0.05);
+  const shippingFee = 2.99;
+  const total = part.price + protectionFee + shippingFee;
+
+  const handleFinalPay = async () => {
+    if (!selectedLocker) return;
+    setIsProcessing(true);
+    const success = await PaymentAPI.processPayment(total, paymentMethod);
+    if (success) {
+      onComplete(selectedLocker, paymentMethod);
     }
-  }, [chat.messages]);
-
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    onSend(inputText);
-    setInputText('');
+    setIsProcessing(false);
   };
 
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-xl h-[80vh] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in duration-200">
-        <div className="p-4 border-b bg-slate-50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={chat.part.imageUrl} className="w-12 h-12 rounded-xl object-cover" alt="" />
-            <div>
-              <h4 className="font-bold text-slate-900 text-sm">{chat.part.title}</h4>
-              <p className="text-[10px] text-slate-500 uppercase font-black">Pardavėjas: {chat.part.seller.name}</p>
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+        <div className="p-6 bg-slate-50 border-b flex justify-between items-center">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+               <h2 className="text-xl font-black text-slate-900 uppercase">Saugus pirkimas</h2>
+               <span className="bg-green-100 text-green-700 text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase">Live</span>
+            </div>
+            <div className="flex gap-1 mt-1">
+              {[1, 2, 3].map(s => (
+                <div key={s} className={`h-1 w-8 rounded-full ${step >= s ? 'bg-orange-600' : 'bg-slate-200'}`}></div>
+              ))}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full">
+             <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/50">
-          {chat.messages.length === 0 && (
-            <div className="text-center py-12 text-slate-400">
-               <svg className="w-12 h-12 mx-auto mb-2 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-               <p className="font-bold uppercase text-[10px] tracking-widest">Sveiki! Pasiteiraukite apie detalės būklę ar pristatymą.</p>
+        <div className="p-8">
+          {step === 1 && (
+            <div className="space-y-6 animate-in fade-in">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">1. Pasirinkite paštomatą</h3>
+              <LockerSelector onSelect={setSelectedLocker} selectedLockerId={selectedLocker?.id} />
+              <button 
+                disabled={!selectedLocker}
+                onClick={() => setStep(2)}
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all disabled:opacity-50"
+              >
+                Toliau į apmokėjimą
+              </button>
             </div>
           )}
-          {chat.messages.map(msg => (
-            <div key={msg.id} className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-4 rounded-2xl text-sm font-medium shadow-sm ${msg.senderId === 'me' ? 'bg-orange-600 text-white rounded-br-none' : 'bg-white text-slate-800 rounded-bl-none border border-slate-100'}`}>
-                {msg.text}
-                <div className={`text-[9px] mt-1 opacity-60 ${msg.senderId === 'me' ? 'text-white' : 'text-slate-400'}`}>
-                  {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+
+          {step === 2 && (
+            <div className="space-y-6 animate-in slide-in-from-right-4">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">2. Apmokėjimo būdas</h3>
+              <div className="grid grid-cols-1 gap-3">
+                <button 
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-4 rounded-2xl border-2 flex items-center gap-4 transition-all ${paymentMethod === 'card' ? 'border-orange-600 bg-orange-50' : 'border-slate-100'}`}
+                >
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">💳</div>
+                  <span className="text-xs font-black uppercase">Banko kortelė</span>
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('paypal')}
+                  className={`p-4 rounded-2xl border-2 flex items-center gap-4 transition-all ${paymentMethod === 'paypal' ? 'border-orange-600 bg-orange-50' : 'border-slate-100'}`}
+                >
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600 font-bold italic">PP</div>
+                  <span className="text-xs font-black uppercase">PayPal</span>
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('bank')}
+                  className={`p-4 rounded-2xl border-2 flex items-center gap-4 transition-all ${paymentMethod === 'bank' ? 'border-orange-600 bg-orange-50' : 'border-slate-100'}`}
+                >
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">🏦</div>
+                  <span className="text-xs font-black uppercase">Bank-Link</span>
+                </button>
+              </div>
+              <button 
+                onClick={() => setStep(3)}
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all"
+              >
+                Peržiūrėti užsakymą
+              </button>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6 animate-in slide-in-from-right-4">
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">3. Galutinis patvirtinimas</h3>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                <div className="flex justify-between text-[10px] uppercase font-black text-slate-400">
+                  <span>Siuntimas į:</span>
+                  <span className="text-slate-900">{selectedLocker?.name}</span>
+                </div>
+                <div className="flex justify-between text-[10px] uppercase font-black text-slate-400">
+                  <span>Mokėjimas:</span>
+                  <span className="text-slate-900">{paymentMethod.toUpperCase()}</span>
+                </div>
+                <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                  <span className="text-sm font-black uppercase italic">Iš viso mokėti:</span>
+                  <span className="text-2xl font-black text-orange-600 tracking-tighter">€{total.toFixed(2)}</span>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
 
-        <div className="p-4 bg-white border-t flex gap-2">
-          <input 
-            type="text" 
-            placeholder="Rašyti žinutę..." 
-            className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-orange-500 text-sm"
-            value={inputText}
-            onChange={e => setInputText(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSend()}
-          />
-          <button 
-            onClick={handleSend}
-            className="bg-orange-600 text-white p-3 rounded-2xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-100"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-          </button>
+              <div className="flex flex-col gap-3">
+                <button 
+                  disabled={isProcessing}
+                  onClick={handleFinalPay}
+                  className="w-full bg-orange-600 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-orange-700 transition-all shadow-xl shadow-orange-100 flex items-center justify-center gap-3"
+                >
+                  {isProcessing ? (
+                    <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> JUNGIAMĖS PER STRIPE...</>
+                  ) : `SUMOKĖTI €${total.toFixed(2)}`}
+                </button>
+                <div className="flex items-center justify-center gap-2 opacity-40">
+                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/></svg>
+                   <span className="text-[10px] font-black uppercase tracking-widest">Saugų mokėjimą užtikrina Stripe</span>
+                </div>
+              </div>
+              <button onClick={() => setStep(2)} className="w-full text-slate-400 text-[10px] font-black uppercase hover:text-slate-600 transition-all">Keisti duomenis</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default ChatModal;
+export default CheckoutModal;
