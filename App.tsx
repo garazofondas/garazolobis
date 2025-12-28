@@ -55,6 +55,7 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log("🛠️ Garažo Lobis užsikūrė sėkmingai!");
     const loadData = async () => {
       setIsLoading(true);
       const remoteParts = await CloudDB.fetchAllParts();
@@ -63,7 +64,6 @@ const App: React.FC = () => {
     };
     loadData();
     
-    // Rodyti manualą pirmą kartą užsukus
     if (!localStorage.getItem('manual_seen')) {
       setIsManualOpen(true);
       localStorage.setItem('manual_seen', 'true');
