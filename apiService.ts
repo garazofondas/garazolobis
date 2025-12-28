@@ -10,7 +10,8 @@ const getConfigs = () => ({
 
 const getSupabase = () => {
   const { supabaseUrl, supabaseKey } = getConfigs();
-  if (supabaseUrl && supabaseKey && supabaseUrl.startsWith('http')) {
+  // Patikriname, ar URL yra tinkamo formato (ne dashboard URL)
+  if (supabaseUrl && supabaseKey && supabaseUrl.includes('.supabase.co')) {
     try {
       return createClient(supabaseUrl, supabaseKey);
     } catch (e) {
@@ -23,22 +24,32 @@ const getSupabase = () => {
 export const CloudDB = {
   testConnection: async () => {
     const supabase = getSupabase();
-    if (!supabase) return { success: false, message: "Trūksta nustatymų laukeliuose." };
+    if (!supabase) {
+      const url = localStorage.getItem('config_supabase_url') || '';
+      if (url.includes('supabase.com/dashboard')) {
+        return { success: false, message: "Klaida: Įvedėte Dashboard URL. Reikia naudoti 'Project URL' iš nustatymų." };
+      }
+      return { success: false, message: "Trūksta nustatymų arba jie neteisingi." };
+    }
     
     try {
-      // Bandome atlikti užklausą su trumpu laukimo laiku
-      const { error } = await supabase.from('parts').select('id').limit(1);
+      // Sukuriame Promise, kuris atšaukia užklausą po 5 sekundžių
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+      
+      const query = supabase.from('parts').select('id').limit(1);
+      
+      const { error } = await (Promise.race([query, timeout]) as any);
       
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('relation "parts" does not exist')) {
-          return { success: false, message: "Klaida: Lentelė 'parts' nerasta! Ar paleidote SQL kodą?" };
+          return { success: false, message: "Lentelė 'parts' nerasta. Paleiskite SQL kodą." };
         }
-        throw error;
+        return { success: false, message: `DB klaida: ${error.message}` };
       }
-      return { success: true, message: "Garažas sėkmingai pajungtas!" };
+      return { success: true, message: "Garažas pajungtas sėkmingai!" };
     } catch (e: any) {
-      console.error("Supabase error:", e);
-      return { success: false, message: "Nepavyko prisijungti. Patikrinkite URL ir raktą." };
+      if (e.message === 'timeout') return { success: false, message: "Nepavyko susisiekti su serveriu (timeout)." };
+      return { success: false, message: "Ryšio klaida. Patikrinkite nustatymus." };
     }
   },
 
