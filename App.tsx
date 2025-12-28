@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './Header';
 import Footer from './Footer';
@@ -18,12 +17,14 @@ const App: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
+  const [isCloudConnected, setIsCloudConnected] = useState(!!localStorage.getItem('config_supabase_url'));
 
   const loadParts = async () => {
     setIsLoading(true);
     try {
       const data = await CloudDB.fetchAllParts();
       setParts(data);
+      setIsCloudConnected(!!localStorage.getItem('config_supabase_url'));
     } catch (error) {
       console.error("Nepavyko užkrauti dalių:", error);
     } finally {
@@ -60,6 +61,13 @@ const App: React.FC = () => {
         onAddClick={() => setIsUploadOpen(true)}
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
+
+      {/* Demo Mode Warning */}
+      {!isCloudConnected && (
+        <div className="bg-orange-600 text-white text-[10px] font-black uppercase tracking-[0.3em] py-2 text-center animate-pulse">
+          Veikia Demo režimu: tavo įkeltas prekes matai tik TU. <button onClick={() => setIsSettingsOpen(true)} className="underline ml-2">Pajungti Garažą</button>
+        </div>
+      )}
 
       <main className="flex-1 max-w-7xl mx-auto px-6 py-12 w-full">
         <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-12">
@@ -102,7 +110,7 @@ const App: React.FC = () => {
 
       <Footer />
 
-      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} />}
+      {isSettingsOpen && <SettingsModal onClose={() => { setIsSettingsOpen(false); loadParts(); }} />}
       {isUploadOpen && <UploadModal onClose={() => setIsUploadOpen(false)} onAdd={loadParts} />}
       {selectedPart && (
         <DetailModal 
