@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { Part } from '../types';
-import { CATEGORIES } from '../constants';
+import { Part } from './types';
+import { CATEGORIES } from './constants';
 
 interface AIAssistantModalProps {
   onClose: () => void;
@@ -30,7 +30,6 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ onClose, availableP
     setIsTyping(true);
 
     try {
-      // Use process.env.API_KEY directly in the initialization as per guidelines
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const context = availableParts.map(p => `${p.title} (€${p.price}, ${p.compatibility.brand} ${p.compatibility.model})`).join(', ');
       
@@ -45,13 +44,11 @@ const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ onClose, availableP
       
       Atsakyk draugiškai, "garažo" stiliumi, bet profesionaliai. Atsakymą pateik tik lietuvių kalba.`;
 
-      // Use ai.models.generateContent to query GenAI with both the model name and prompt
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
       });
 
-      // Access the .text property directly as per latest SDK guidelines
       setMessages(prev => [...prev, { role: 'model', text: response.text || 'Atsiprašau, dingo ryšys su garažu.' }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'model', text: 'Panašu, kad variklis užgeso (API klaida). Pabandyk vėliau.' }]);
