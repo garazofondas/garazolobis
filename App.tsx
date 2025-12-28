@@ -12,16 +12,18 @@ import CheckoutModal from './components/CheckoutModal';
 import WithdrawModal from './components/WithdrawModal';
 import NegotiateModal from './components/NegotiateModal';
 import ManualModal from './components/ManualModal';
+import AIAssistantModal from './components/AIAssistantModal';
 import { CloudDB } from './apiService';
 import { Part, Vehicle, Order, OrderStatus, Chat, Message, AppNotification, Locker } from './types';
 
-type ViewMode = 'buy' | 'sell' | 'inbox' | 'wallet' | 'favorites' | 'notifications';
+type ViewMode = 'buy' | 'sell' | 'inbox' | 'wallet' | 'favorites' | 'notifications' | 'orders';
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('buy');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isManualOpen, setIsManualOpen] = useState(false);
+  const [isAIActive, setIsAIActive] = useState(false);
   
   const [parts, setParts] = useState<Part[]>([]);
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -29,6 +31,11 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
   
+  const [myOrders, setMyOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('my_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [notifications] = useState<AppNotification[]>([
     { id: '1', title: 'Sveiki atvykę!', message: 'Tavo garažas paruoštas lobiams. Iškelk pirmą detalę jau dabar!', type: 'match', read: false, timestamp: new Date().toISOString() }
   ]);
@@ -78,8 +85,9 @@ const App: React.FC = () => {
     localStorage.setItem('my_favorites', JSON.stringify(favorites));
     localStorage.setItem('my_garage', JSON.stringify(myGarage));
     localStorage.setItem('wallet_balance', walletBalance.toString());
+    localStorage.setItem('my_orders', JSON.stringify(myOrders));
     if (activeVehicleId) localStorage.setItem('active_vehicle_id', activeVehicleId);
-  }, [favorites, myGarage, activeVehicleId, walletBalance]);
+  }, [favorites, myGarage, activeVehicleId, walletBalance, myOrders]);
 
   const activeVehicle = useMemo(() => 
     myGarage.find(v => v.id === activeVehicleId) || null
@@ -165,11 +173,11 @@ const App: React.FC = () => {
       locker: locker,
       paymentMethod: method
     };
+    setMyOrders(prev => [newOrder, ...prev]);
     setActiveOrder(newOrder);
     setShowCheckout(null);
   };
 
-  // Pagrindinio turinio renderinimo logika, kad vaizdai nepersidengtų
   const renderMainContent = () => {
     if (isLoading) {
       return (
@@ -244,7 +252,39 @@ const App: React.FC = () => {
           </div>
         );
 
-      default: // 'buy', 'sell', 'favorites'
+      case 'orders':
+        return (
+          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
+            <h2 className="text-2xl font-black text-slate-900 uppercase italic mb-6">Mano Pirkimai</h2>
+            {myOrders.length === 0 ? (
+              <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 text-center text-slate-400">
+                <p className="font-black uppercase tracking-widest text-xs">Dar nieko nepirkai</p>
+              </div>
+            ) : (
+              myOrders.map(order => (
+                <div key={order.id} className="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-6 shadow-sm hover:border-orange-200 transition-all">
+                  <img src={order.part.imageUrl} className="w-20 h-20 rounded-xl object-cover" />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-slate-900">{order.part.title}</h4>
+                      <span className="text-[10px] font-black bg-orange-50 text-orange-600 px-2 py-1 rounded-lg uppercase tracking-widest">{order.status}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Užsakymas: {order.id}</p>
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="text-xs font-black text-slate-800 tracking-tighter">€{order.part.price.toFixed(2)}</div>
+                      <div className="text-[10px] text-slate-500 italic">Siuntimas: {order.locker.name}</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setActiveOrder(order)} className="p-3 bg-slate-50 text-slate-400 hover:text-orange-600 rounded-xl transition-all">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        );
+
+      default:
         return (
           <>
             <div className="flex justify-between items-end mb-8">
@@ -261,7 +301,7 @@ const App: React.FC = () => {
             {filteredParts.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                  <svg className="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
                 </div>
                 <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Šiuo metu nieko nerasta</p>
                 <button onClick={() => {setSearchTerm(''); setViewMode('buy');}} className="mt-4 text-orange-600 font-bold uppercase text-[10px] tracking-widest hover:underline">Rodyti viską</button>
@@ -307,7 +347,23 @@ const App: React.FC = () => {
 
       <Footer />
 
+      {/* AI Assistant FAB */}
+      <button 
+        onClick={() => setIsAIActive(!isAIActive)}
+        className="fixed bottom-8 right-8 z-[190] w-16 h-16 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center justify-center hover:bg-orange-600 transition-all hover:scale-110 active:scale-95 group"
+      >
+        <svg className="w-8 h-8 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+        <span className="absolute -top-2 -right-2 bg-orange-600 text-white text-[8px] font-black px-2 py-1 rounded-full animate-bounce">AI</span>
+      </button>
+
       {/* Modals */}
+      {isAIActive && (
+        <AIAssistantModal 
+          onClose={() => setIsAIActive(false)} 
+          availableParts={parts} 
+          onSelectPart={(p) => { setSelectedPart(p); setIsAIActive(false); }}
+        />
+      )}
       {isManualOpen && <ManualModal onClose={() => setIsManualOpen(false)} />}
       {isUploadModalOpen && <UploadModal onClose={() => setIsUploadModalOpen(false)} onAdd={handleAddPart} />}
       {selectedPart && (
