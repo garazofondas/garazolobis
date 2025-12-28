@@ -1,4 +1,3 @@
-
 export enum Condition {
   NEW = 'Nauja',
   LIKE_NEW = 'Kaip nauja',
@@ -15,11 +14,12 @@ export enum OrderStatus {
   COMPLETED = 'Užbaigta'
 }
 
-export interface SavedSearch {
+export interface Locker {
   id: string;
-  term: string;
-  category: string | null;
-  createdAt: string;
+  name: string;
+  address: string;
+  city: string;
+  type: 'Omniva' | 'DPD' | 'LP Express';
 }
 
 export interface AppNotification {
@@ -45,18 +45,6 @@ export interface PartCompatibility {
   brand: string;
   model: string;
   configurations: string[];
-  minDisplacement?: string;
-  maxDisplacement?: string;
-  minPower?: string;
-  maxPower?: string;
-}
-
-export interface Review {
-  id: string;
-  rating: number;
-  comment: string;
-  author: string;
-  date: string;
 }
 
 export interface Seller {
@@ -64,7 +52,6 @@ export interface Seller {
   rating: number;
   reviewCount: number;
   avatar: string;
-  reviews?: Review[];
 }
 
 export interface Part {
@@ -104,6 +91,7 @@ export interface Order {
   status: OrderStatus;
   shippingCode: string;
   createdAt: string;
-  lockerType: 'Omniva' | 'DPD' | 'LP Express';
+  locker: Locker;
+  paymentMethod: 'card' | 'paypal' | 'bank';
   labelUrl?: string;
 }
