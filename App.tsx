@@ -13,7 +13,7 @@ import RatingModal from './components/RatingModal';
 import NegotiateModal from './components/NegotiateModal';
 import ManualModal from './components/ManualModal';
 import { CloudDB } from './apiService';
-import { Part, Vehicle, Order, OrderStatus, Chat, Message, AppNotification } from './types';
+import { Part, Vehicle, Order, OrderStatus, Chat, Message, AppNotification, Locker } from './types';
 
 type ViewMode = 'buy' | 'sell' | 'inbox' | 'wallet' | 'favorites' | 'notifications';
 
@@ -41,7 +41,6 @@ const App: React.FC = () => {
   const [showCheckout, setShowCheckout] = useState<Part | null>(null);
   const [showWithdraw, setShowWithdraw] = useState(false);
   
-  // Nustatome pradines lėšas į 0.00 €, kaip tikroje programėlėje
   const [walletBalance, setWalletBalance] = useState(() => {
     const saved = localStorage.getItem('wallet_balance');
     return saved ? parseFloat(saved) : 0.00;
@@ -155,6 +154,21 @@ const App: React.FC = () => {
     setActiveChat(updatedChat);
   };
 
+  const handleCheckoutComplete = (locker: Locker, method: any) => {
+    if (!showCheckout) return;
+    const newOrder: Order = {
+      id: 'ORD-'+Date.now(),
+      part: showCheckout,
+      status: OrderStatus.PENDING_SHIPMENT,
+      shippingCode: Math.floor(100000 + Math.random() * 900000).toString(),
+      createdAt: new Date().toISOString(),
+      locker: locker,
+      paymentMethod: method
+    };
+    setActiveOrder(newOrder);
+    setShowCheckout(null);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header 
@@ -239,10 +253,7 @@ const App: React.FC = () => {
         />
       )}
       {showNegotiate && <NegotiateModal part={showNegotiate} onClose={() => setShowNegotiate(null)} onSubmitOffer={(amt) => handleOffer(showNegotiate, amt)} />}
-      {showCheckout && <CheckoutModal part={showCheckout} onClose={() => setShowCheckout(null)} onComplete={() => {
-        setActiveOrder({ id: 'ORD-'+Date.now(), part: showCheckout, status: OrderStatus.PENDING_SHIPMENT, shippingCode: '778-991', createdAt: new Date().toISOString(), lockerType: 'Omniva' });
-        setShowCheckout(null);
-      }} />}
+      {showCheckout && <CheckoutModal part={showCheckout} onClose={() => setShowCheckout(null)} onComplete={handleCheckoutComplete} />}
       {activeOrder && <OrderInstructions order={activeOrder} onClose={() => setActiveOrder(null)} />}
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onSuccess={() => { setIsLoggedIn(true); setShowAuthModal(false); }} />}
       {isGarageModalOpen && (
@@ -268,20 +279,6 @@ const App: React.FC = () => {
               >
                 Išsigryninti į banką
               </button>
-           </div>
-           
-           <div className="mt-8 bg-white rounded-2xl p-6 border border-slate-200">
-             <h3 className="font-black uppercase text-xs text-slate-400 mb-4 tracking-widest">Piniginė veikia taip:</h3>
-             <ul className="space-y-3">
-               <li className="flex gap-3 text-sm font-medium text-slate-600">
-                 <span className="text-orange-500">✔</span>
-                 Parduodi prekę – pinigai atsiranda čia, kai pirkėjas gauna siuntą.
-               </li>
-               <li className="flex gap-3 text-sm font-medium text-slate-600">
-                 <span className="text-orange-500">✔</span>
-                 Perki prekę – moki tiesiai iš kortelės (pinigai čia neatsiranda).
-               </li>
-             </ul>
            </div>
         </div>
       )}
