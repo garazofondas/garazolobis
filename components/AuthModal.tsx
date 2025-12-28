@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface AuthModalProps {
@@ -38,7 +37,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
             </div>
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase mb-1 tracking-widest">Slaptažodis</label>
-              <input type="password" dangerouslySetInnerHTML={{__html: ''}} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all" placeholder="••••••••" />
+              <input type="password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all" placeholder="••••••••" />
             </div>
 
             <button 
