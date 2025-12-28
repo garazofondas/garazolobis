@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import PartCard from './components/PartCard';
 import UploadModal from './components/UploadModal';
 import DetailModal from './components/DetailModal';
@@ -9,7 +10,6 @@ import AuthModal from './components/AuthModal';
 import ChatModal from './components/ChatModal';
 import CheckoutModal from './components/CheckoutModal';
 import WithdrawModal from './components/WithdrawModal';
-import RatingModal from './components/RatingModal';
 import NegotiateModal from './components/NegotiateModal';
 import ManualModal from './components/ManualModal';
 import { CloudDB } from './apiService';
@@ -28,11 +28,13 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('my_favorites');
     return saved ? JSON.parse(saved) : [];
   });
-  const [notifications] = useState<AppNotification[]>([]);
+  
+  const [notifications] = useState<AppNotification[]>([
+    { id: '1', title: 'Sveiki atvykę!', message: 'Tavo garažas paruoštas lobiams. Iškelk pirmą detalę jau dabar!', type: 'match', read: false, timestamp: new Date().toISOString() }
+  ]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isGarageModalOpen, setIsGarageModalOpen] = useState(false);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
@@ -58,7 +60,6 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    console.log("🛠️ Garažo Lobis užsikūrė sėkmingai!");
     const loadData = async () => {
       setIsLoading(true);
       const remoteParts = await CloudDB.fetchAllParts();
@@ -95,14 +96,13 @@ const App: React.FC = () => {
         part.brand.toLowerCase().includes(term) ||
         (part.partCode && part.partCode.toLowerCase().includes(term));
         
-      const matchesCategory = !selectedCategory || part.category === selectedCategory;
       let matchesGarage = true;
       if (activeVehicle && viewMode === 'buy') {
         matchesGarage = part.compatibility.brand.toLowerCase() === activeVehicle.brand.toLowerCase();
       }
-      return matchesSearch && matchesCategory && matchesGarage;
+      return matchesSearch && matchesGarage;
     });
-  }, [parts, searchTerm, selectedCategory, activeVehicle, viewMode, favorites]);
+  }, [parts, searchTerm, activeVehicle, viewMode, favorites]);
 
   const handleAddPart = async (newPart: Part) => {
     setIsLoading(true);
@@ -169,6 +169,121 @@ const App: React.FC = () => {
     setShowCheckout(null);
   };
 
+  // Pagrindinio turinio renderinimo logika, kad vaizdai nepersidengtų
+  const renderMainContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-32">
+          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-4"></div>
+          <p className="font-black text-xs uppercase text-slate-400 tracking-widest">Atidarom garažo vartus...</p>
+        </div>
+      );
+    }
+
+    switch (viewMode) {
+      case 'inbox':
+        return (
+          <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4">
+            <h2 className="text-2xl font-black text-slate-900 uppercase italic mb-6">Žinutės</h2>
+            {chats.length === 0 ? (
+              <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 text-center text-slate-400">
+                <p className="font-black uppercase tracking-widest text-xs">Kol kas žinučių nėra</p>
+              </div>
+            ) : (
+              chats.map(chat => (
+                <div key={chat.id} onClick={() => setActiveChat(chat)} className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4 cursor-pointer hover:border-orange-500 transition-all">
+                  <img src={chat.part.imageUrl} className="w-16 h-16 rounded-xl object-cover" />
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-900">{chat.part.title}</h4>
+                    <p className="text-xs text-slate-500">{chat.messages[chat.messages.length-1]?.text || 'Pradėkite pokalbį'}</p>
+                  </div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase">{new Date(chat.lastMessageAt).toLocaleDateString()}</div>
+                </div>
+              ))
+            )}
+          </div>
+        );
+
+      case 'wallet':
+        return (
+          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4">
+             <div className="bg-slate-900 rounded-3xl p-8 md:p-12 text-white shadow-2xl relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-orange-600/20 rounded-full blur-3xl"></div>
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Tavo balansas</h4>
+                <h2 className="text-6xl font-black mb-10 tracking-tighter italic">€{walletBalance.toFixed(2)}</h2>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button 
+                    disabled={walletBalance <= 0}
+                    onClick={() => setShowWithdraw(true)} 
+                    className={`px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all ${walletBalance > 0 ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-900/40' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                  >
+                    Išsigryninti į banką
+                  </button>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase self-center italic">Pinigai saugiai saugomi Stripe</p>
+                </div>
+             </div>
+          </div>
+        );
+
+      case 'notifications':
+        return (
+          <div className="max-w-3xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4">
+            <h2 className="text-2xl font-black text-slate-900 uppercase italic mb-6">Pranešimai</h2>
+            {notifications.map(n => (
+              <div key={n.id} className="bg-white p-6 rounded-2xl border border-slate-100 flex gap-4 items-start shadow-sm">
+                <div className="bg-orange-50 p-3 rounded-xl text-orange-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900">{n.title}</h4>
+                  <p className="text-sm text-slate-500 mb-2 font-medium">{n.message}</p>
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{new Date(n.timestamp).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      default: // 'buy', 'sell', 'favorites'
+        return (
+          <>
+            <div className="flex justify-between items-end mb-8">
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">
+                  {viewMode === 'favorites' ? 'Mėgstamos Dalys' : viewMode === 'sell' ? 'Mano Garažas' : 'Naujausi Lobiai'}
+                </h2>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-2">
+                  {filteredParts.length} rastų elementų
+                </p>
+              </div>
+            </div>
+
+            {filteredParts.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                </div>
+                <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Šiuo metu nieko nerasta</p>
+                <button onClick={() => {setSearchTerm(''); setViewMode('buy');}} className="mt-4 text-orange-600 font-bold uppercase text-[10px] tracking-widest hover:underline">Rodyti viską</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {filteredParts.map(part => (
+                  <PartCard 
+                    key={part.id} 
+                    part={part} 
+                    onClick={setSelectedPart} 
+                    isFavorite={favorites.includes(part.id)}
+                    onToggleFavorite={(e, id) => { e.stopPropagation(); setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]); }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header 
@@ -183,62 +298,14 @@ const App: React.FC = () => {
         onViewModeChange={(mode) => setViewMode(mode as any)}
         walletBalance={walletBalance}
         notifications={notifications}
-        onNotificationClick={() => setViewMode('notifications' as any)}
+        onNotificationClick={() => setViewMode('notifications')}
       />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-             <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin mb-4"></div>
-             <p className="font-black text-xs uppercase text-slate-400 tracking-widest">Atidarom garažo vartus...</p>
-          </div>
-        ) : viewMode === 'inbox' ? (
-          <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in slide-in-from-bottom-4">
-             <h2 className="text-2xl font-black text-slate-900 uppercase italic mb-6">Žinutės</h2>
-             {chats.length === 0 ? (
-               <div className="bg-white p-12 rounded-3xl border border-dashed border-slate-300 text-center text-slate-400">
-                  <p className="font-black uppercase tracking-widest text-xs">Kol kas žinučių nėra</p>
-               </div>
-             ) : (
-               chats.map(chat => (
-                 <div 
-                   key={chat.id} 
-                   onClick={() => setActiveChat(chat)}
-                   className="bg-white p-4 rounded-2xl border border-slate-200 flex items-center gap-4 cursor-pointer hover:border-orange-500 transition-all"
-                 >
-                    <img src={chat.part.imageUrl} className="w-16 h-16 rounded-xl object-cover" />
-                    <div className="flex-1">
-                       <h4 className="font-bold text-slate-900">{chat.part.title}</h4>
-                       <p className="text-xs text-slate-500">{chat.messages[chat.messages.length-1]?.text || 'Pradėkite pokalbį'}</p>
-                    </div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase">{new Date(chat.lastMessageAt).toLocaleDateString()}</div>
-                 </div>
-               ))
-             )}
-          </div>
-        ) : (
-          <>
-            {filteredParts.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-100">
-                <p className="text-slate-400 font-black uppercase text-xs tracking-widest">Šiuo metu nieko nerasta</p>
-                <button onClick={() => {setSearchTerm(''); setViewMode('buy');}} className="mt-4 text-orange-600 font-bold uppercase text-[10px] tracking-widest hover:underline">Rodyti viską</button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredParts.map(part => (
-                  <PartCard 
-                    key={part.id} 
-                    part={part} 
-                    onClick={setSelectedPart} 
-                    isFavorite={favorites.includes(part.id)}
-                    onToggleFavorite={(e, id) => { e.stopPropagation(); setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]); }}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 w-full">
+        {renderMainContent()}
       </main>
+
+      <Footer />
 
       {/* Modals */}
       {isManualOpen && <ManualModal onClose={() => setIsManualOpen(false)} />}
@@ -267,21 +334,6 @@ const App: React.FC = () => {
         />
       )}
       {activeChat && <ChatModal chat={activeChat} onClose={() => setActiveChat(null)} onSend={handleSendMessage} />}
-      {viewMode === 'wallet' && (
-        <div className="max-w-3xl mx-auto p-6">
-           <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-2xl">
-              <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Tavo balansas</h4>
-              <h2 className="text-5xl font-black mb-8 tracking-tighter">€{walletBalance.toFixed(2)}</h2>
-              <button 
-                disabled={walletBalance <= 0}
-                onClick={() => setShowWithdraw(true)} 
-                className={`px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all ${walletBalance > 0 ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-900/40' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
-              >
-                Išsigryninti į banką
-              </button>
-           </div>
-        </div>
-      )}
       {showWithdraw && (
         <WithdrawModal 
           balance={walletBalance} 
