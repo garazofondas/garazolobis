@@ -4,9 +4,13 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  define: {
+    // Užtikriname, kad API_KEY būtų pasiekiamas per process.env.API_KEY
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ''),
+    'process.env': process.env
+  },
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: false
   }
 });
