@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Part } from '../types';
+import { Part } from './types';
 
 export default function PartCard({ part, onClick }: { part: Part, onClick: (p: Part) => void }) {
   return (

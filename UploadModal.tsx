@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
-import { analyzePartImage } from '../geminiService';
-import { CloudDB } from '../apiService';
-import { Condition } from '../types';
+import { analyzePartImage } from './geminiService';
+import { CloudDB } from './apiService';
+import { Condition } from './types';
 
 export default function UploadModal({ onClose, onAdd }: any) {
   const [image, setImage] = useState<string | null>(null);
@@ -32,13 +32,17 @@ export default function UploadModal({ onClose, onAdd }: any) {
         description: res.description
       });
     } catch (e) {
-      alert("AI nepavyko, įvesk ranka");
+      alert("AI nepavyko, įveskite duomenis ranka.");
     } finally {
       setAnalyzing(false);
     }
   };
 
   const handleSave = async () => {
+    if (!image || !formData.title || !formData.price) {
+      alert("Užpildykite pagrindinius laukus.");
+      return;
+    }
     const part = {
       ...formData,
       id: Math.random().toString(36).substr(2, 9),
@@ -48,7 +52,7 @@ export default function UploadModal({ onClose, onAdd }: any) {
       location: 'Vilnius',
       createdAt: new Date().toISOString(),
       compatibility: { brand: formData.brand, model: 'Universalu', configurations: [] },
-      seller: { name: 'Mano Garažas', rating: 5, reviewCount: 0, avatar: '' }
+      seller: { name: 'Mano Garažas', rating: 5, reviewCount: 0, avatar: 'https://picsum.photos/seed/mygarage/100/100' }
     };
     await CloudDB.savePart(part as any);
     onAdd();
