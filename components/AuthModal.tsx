@@ -16,8 +16,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const handleAction = () => {
     setError('');
     
-    if (!email || !password || (!isLogin && !name)) {
-      setError('Užpildykite visus laukus!');
+    // Tikriname ar užpildyti pagrindiniai laukai
+    if (!email || !password) {
+      setError('Įveskite el. paštą ir slaptažodį!');
+      return;
+    }
+
+    if (!isLogin && !name) {
+      setError('Įveskite savo vardą!');
       return;
     }
 
@@ -36,7 +42,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       return;
     }
 
-    // Imituojame sėkmingą prisijungimą
+    // Jei viskas gerai - sėkmė
     onSuccess();
   };
 
@@ -53,45 +59,46 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
               {isLogin ? 'Sveikas sugrįžęs!' : 'Prisijunk prie garažo'}
             </h2>
-            <p className="text-slate-500 mt-2">Prisijunk, kad galėtum pirkti ir parduoti saugiai.</p>
           </div>
 
           <div className="space-y-4">
             {error && (
-              <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-xs font-black uppercase text-center border border-rose-100 animate-bounce">
+              <div className="bg-rose-50 text-rose-600 p-3 rounded-xl text-[10px] font-black uppercase text-center border border-rose-100 animate-bounce">
                 {error}
               </div>
             )}
 
             {!isLogin && (
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase mb-1 tracking-widest">Vardas</label>
+                <label className="block text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Vardas</label>
                 <input 
                   type="text" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={`w-full bg-slate-50 border ${error && !name ? 'border-rose-500' : 'border-slate-200'} rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all`} 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm font-bold" 
                   placeholder="Vardenis" 
                 />
               </div>
             )}
+            
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase mb-1 tracking-widest">El. paštas</label>
+              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">El. paštas</label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full bg-slate-50 border ${error && !email ? 'border-rose-500' : 'border-slate-200'} rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all`} 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm font-bold" 
                 placeholder="pavyzdys@pastas.lt" 
               />
             </div>
+
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase mb-1 tracking-widest">Slaptažodis</label>
+              <label className="block text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Slaptažodis</label>
               <input 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full bg-slate-50 border ${error && !password ? 'border-rose-500' : 'border-slate-200'} rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all`} 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm font-bold" 
                 placeholder="••••••••" 
               />
             </div>
@@ -106,14 +113,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                   className="mt-1 w-4 h-4 text-orange-600 border-slate-300 rounded focus:ring-orange-500"
                 />
                 <label htmlFor="terms" className="text-[10px] text-slate-500 leading-tight">
-                  Sutinku su <a href="#" className="text-orange-600 underline">Taisyklėmis</a> ir patvirtinu, kad susipažinau su <a href="#" className="text-orange-600 underline">Privatumo politika</a>.
+                  Sutinku su taisyklėmis ir privatumo politika.
                 </label>
               </div>
             )}
 
             <button 
               onClick={handleAction}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-100 mt-4 uppercase tracking-wider"
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-orange-100 mt-4 uppercase tracking-wider active:scale-95"
             >
               {isLogin ? 'Prisijungti' : 'Registruotis'}
             </button>
@@ -122,7 +129,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <button 
               onClick={() => { setIsLogin(!isLogin); setError(''); }}
-              className="text-slate-500 text-sm font-medium hover:text-orange-600 transition-colors"
+              className="text-slate-500 text-[10px] font-black uppercase hover:text-orange-600 transition-colors tracking-widest"
             >
               {isLogin ? 'Neturi paskyros? Registruokis' : 'Jau turi paskyrą? Prisijunk'}
             </button>
