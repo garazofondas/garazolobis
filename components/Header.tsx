@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Vehicle, AppNotification } from '../types';
 
@@ -14,7 +13,6 @@ interface HeaderProps {
   onViewModeChange: (mode: any) => void;
   walletBalance: number;
   notifications: AppNotification[];
-  // Fix: Added missing onNotificationClick property to the interface
   onNotificationClick: () => void;
 }
 
@@ -30,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
   onViewModeChange,
   walletBalance,
   notifications,
-  // Fix: Destructured the missing onNotificationClick prop
   onNotificationClick,
 }) => {
   return (
@@ -68,7 +65,14 @@ const Header: React.FC<HeaderProps> = ({
 
           {isLoggedIn && (
             <div className="flex items-center gap-1">
-              {/* Added notification icon button */}
+              <button 
+                onClick={() => onViewModeChange('orders')}
+                className={`p-3 rounded-xl transition-all ${viewMode === 'orders' ? 'bg-orange-50 text-orange-600' : 'hover:bg-slate-50 text-slate-400'}`}
+                title="Mano užsakymai"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+              </button>
+
               <button 
                 onClick={onNotificationClick}
                 className={`p-3 rounded-xl transition-all relative ${viewMode === 'notifications' ? 'bg-orange-50 text-orange-600' : 'hover:bg-slate-50 text-slate-400'}`}
