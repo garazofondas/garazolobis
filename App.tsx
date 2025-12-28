@@ -17,14 +17,19 @@ const App: React.FC = () => {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
-  const [isCloudConnected, setIsCloudConnected] = useState(!!localStorage.getItem('config_supabase_url'));
+  const [isCloudConnected, setIsCloudConnected] = useState(false);
+
+  const checkCloud = () => {
+    const url = localStorage.getItem('config_supabase_url');
+    setIsCloudConnected(!!(url && url.includes('.supabase.co')));
+  };
 
   const loadParts = async () => {
     setIsLoading(true);
+    checkCloud();
     try {
       const data = await CloudDB.fetchAllParts();
       setParts(data);
-      setIsCloudConnected(!!localStorage.getItem('config_supabase_url'));
     } catch (error) {
       console.error("Nepavyko užkrauti dalių:", error);
     } finally {
@@ -34,23 +39,13 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadParts();
-    const hasUrl = !!localStorage.getItem('config_supabase_url');
-    const hasPrompted = sessionStorage.getItem('settings_prompted');
-    
-    if (!hasUrl && !hasPrompted) {
-      const timer = setTimeout(() => {
-        setIsSettingsOpen(true);
-        sessionStorage.setItem('settings_prompted', 'true');
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
   }, []);
 
   const filteredParts = useMemo(() => {
     return parts.filter(p => 
       p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      (p.category && p.category.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [parts, searchTerm]);
 
@@ -62,10 +57,11 @@ const App: React.FC = () => {
         onSettingsClick={() => setIsSettingsOpen(true)}
       />
 
-      {/* Demo Mode Warning */}
       {!isCloudConnected && (
-        <div className="bg-orange-600 text-white text-[10px] font-black uppercase tracking-[0.3em] py-2 text-center animate-pulse">
-          Veikia Demo režimu: tavo įkeltas prekes matai tik TU. <button onClick={() => setIsSettingsOpen(true)} className="underline ml-2">Pajungti Garažą</button>
+        <div className="bg-orange-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2.5 text-center flex items-center justify-center gap-4">
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          DEMO REŽIMAS: DUOMENYS IŠSAUGOMI TIK ŠIOJE NARŠYKLĖJE
+          <button onClick={() => setIsSettingsOpen(true)} className="underline font-black hover:text-slate-900 transition-colors">PAJUNGTI DB</button>
         </div>
       )}
 
@@ -116,8 +112,8 @@ const App: React.FC = () => {
         <DetailModal 
           part={selectedPart} 
           onClose={() => setSelectedPart(null)} 
-          onAddToCart={() => alert('Netrukus galėsite pirkti')}
-          onMessage={() => alert('Žinutės bus pasiekiamos vėliau')}
+          onAddToCart={() => alert('Netrukus galėsite pirkti saugiai')}
+          onMessage={() => alert('Susirašinėjimas laikinai pasiekiamas tik skelbime')}
           onNegotiate={() => alert('Derybos bus pasiekiamos vėliau')}
         />
       )}
